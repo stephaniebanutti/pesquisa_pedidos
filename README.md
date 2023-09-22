@@ -60,11 +60,4 @@ Se você deseja configurar o banco de dados para este projeto e importar as tabe
 
 2. **Crie o Banco de Dados:** Crie um banco de dados vazio para o projeto. Você pode fazer isso usando a linha de comando ou uma interface gráfica.
 
-3. **Importe o Esquema do Banco de Dados:** Use o arquivo SQL fornecido para importar a estrutura do banco de dados. Você pode fazer isso executando o seguinte comando em seu terminal (substitua `<seu_banco_de_dados>` pelo nome do seu banco de dados):
-
-   ```shell
-   mysql -u seu_usuario -p seu_banco_de_dados < esquema.sql
-
-
-
-mysql -u seu_usuario -p seu_banco_de_dados < dados_exemplo.sql
+3. **Importe o Esquema do Banco de Dados:** Use o arquivo SQL fornecido para importar a estrutura do banco de dados.
