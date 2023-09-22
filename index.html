@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisar Cliente</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <h2>Pesquise um pedido, inserindo CPF do Cliente:</h2>
+                <form id="cpfForm" action="#" method="post">
+                    <div class="mb-3">
+                        <label for="cpf" class="form-label">CPF:</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf" placeholder="Informe o CPF" required>
+                        <small id="cpfError" class="text-danger"></small> <!-- Exibe mensagens de erro aqui -->
+                    </div>
+                    <button type="submit" class="btn btn-primary">Pesquisar</button>
+                </form>
+                <!-- Exibe a mensagem da API aqui -->
+                <div id="apiMessage" class="mt-3"></div>
+
+                <!-- Tabela para exibir resultados -->
+                <table class="table mt-3" id="resultTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results">
+                        <!-- Os resultados da API serão inseridos aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#cpfForm').submit(function (e) {
+                e.preventDefault(); // Impede o envio padrão do formulário
+
+                var cpf = $('#cpf').val();
+
+                // Valida o CPF (exemplo simples)
+                if (!validarCPF(cpf)) {
+                    $('#cpfError').text('CPF inválido');
+                    $('#resultTable').hide(); // Esconde a tabela
+                    return;
+                }
+
+                // Limpa mensagens de erro anteriores
+                $('#cpfError').text('');
+                
+                // Realiza a solicitação AJAX
+                $.ajax({
+                    url: 'api/buscaPedido.php',
+                    type: 'POST',
+                    data: { cpf: cpf },
+                    success: function (data) {
+                    console.log(data);
+
+                    // Verifica se a mensagem de erro foi retornada pela API
+                    if (data.hasOwnProperty('message')) {
+                        $('#apiMessage').text(data.message);
+                        $('#resultTable').hide(); // Esconde a tabela
+
+                    } else {
+                        // Limpa mensagens de erro anteriores
+                        $('#cpfError').text('');
+                        
+                        // Remove todas as linhas da tabela (exceto o cabeçalho)
+                        $('#results tr').not(':first').remove();
+
+                        // Itera sobre os clientes retornados pela API e cria uma linha na tabela para cada um
+                        $.each(data.data, function (index, customer) {
+                            var newRow = '<tr><td>' + customer.first_name +'</td><td>' + customer.cpf + '</td><td><a href="visualizar_pedido.html?id=' + customer.customer_id + '" class="btn btn-info">Visualizar Pedido</a></td></tr>';
+                            $('#results').append(newRow);
+                        });
+
+                        $('#apiMessage').text(''); // Limpa a mensagem da API
+                        $('#resultTable').show(); // Mostra a tabela
+                    }
+                },
+                    error: function (error) {
+                        $('#apiMessage').html('Nenhum pedido encontrado!');
+                        console.log('Erro ao buscar informações do CPF.');
+                    }
+                });
+
+            });
+
+            function validarCPF(cpf) {
+                cpf = cpf.replace(/\D/g, '');
+
+                // Verifica se o CPF tem 11 dígitos
+                if (cpf.length !== 11) {
+                    return false;
+                }
+
+                // Verifica se todos os dígitos são iguais (CPF inválido)
+                if (/^(\d)\1{10}$/.test(cpf)) {
+                    return false;
+                }
+
+                // Calcula o primeiro dígito verificador
+                let soma = 0;
+                for (let i = 0; i < 9; i++) {
+                    soma += parseInt(cpf.charAt(i)) * (10 - i);
+                }
+                let resto = 11 - (soma % 11);
+                let digito1 = (resto === 10 || resto === 11) ? 0 : resto;
+
+                // Verifica o primeiro dígito verificador
+                if (digito1 !== parseInt(cpf.charAt(9))) {
+                    return false;
+                }
+
+                // Calcula o segundo dígito verificador
+                soma = 0;
+                for (let i = 0; i < 10; i++) {
+                    soma += parseInt(cpf.charAt(i)) * (11 - i);
+                }
+                resto = 11 - (soma % 11);
+                let digito2 = (resto === 10 || resto === 11) ? 0 : resto;
+
+                // Verifica o segundo dígito verificador
+                if (digito2 !== parseInt(cpf.charAt(10))) {
+                    return false;
+                }
+
+                // CPF válido
+                return true;
+            }
+
+        });
+    </script>
+</body>
+</html>

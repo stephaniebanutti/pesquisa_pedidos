@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Pedido</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+
+    <!-- Modal de Adicionar Pedido -->
+<div class="modal fade" id="modalAdicionarPedido" tabindex="-1" aria-labelledby="modalAdicionarPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAdicionarPedidoLabel">Adicionar Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAdicionarPedido">
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição:</label>
+                        <select class="form-control" name="" id="descricao" required>
+                            <option value="">Selecione:</option>
+                            <option value="1">Item 1</option>
+                            <option value="2">Item 2</option>
+                            <option value="3">Item 3</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade" class="form-label">Quantidade:</label>
+                        <input type="number" class="form-control" id="quantidade" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalAtualizarPedido" tabindex="-1" aria-labelledby="modalAtualizarPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAtualizarPedidoLabel">Atualizar Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para atualizar pedido -->
+                <form id="formAtualizarPedido">
+                    <div class="mb-3">
+                        <label for="descricao_att" class="form-label">Descrição:</label>
+                        <select class="form-control" name="descricao_att" id="descricao_att" required>
+                            <option value="">Selecione:</option>
+                            <option value="1">Item 1</option>
+                            <option value="2">Item 2</option>
+                            <option value="3">Item 3</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantidade_att" class="form-label">Quantidade:</label>
+                        <input type="number" class="form-control" id="quantidade_att" name="quantidade_att" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+     <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Detalhes do Pedido</h2>
+                <div class="mb-3">
+                    <button class="btn btn-primary" id="btnAdicionar">Adicionar Pedido</button>
+                </div>
+
+                <table class="table" id="pedidoTable">
+                    <thead>
+                        <tr>
+                            <th>ID do Pedido</th>
+                            <th>Nome do Cliente</th>
+                            <th>Descrição</th>
+                            <th>Quantidade</th>
+                            <th>Valor Total</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Os detalhes do pedido serão inseridos aqui dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    
+    <script>
+
+    const url = new URL(window.location.href);
+    const idCliente = url.searchParams.get("id");
+
+    $(document).ready(function () {
+        $('#btnAdicionar').click(function () {
+            $('#modalAdicionarPedido').modal('show');
+        });
+
+        // Evento de envio do formulário para adicionar um novo pedido
+        $('#formAdicionarPedido').submit(function (e) {
+            e.preventDefault();
+
+            const quantidade = $('#quantidade').val();
+            const descricao = $('#descricao').val();
+
+            // Cálculo do valor total com base na descrição selecionada
+            let valorTotal = 0;
+            if (descricao == 1) {
+                valorTotal = quantidade * 1;
+            } else if (descricao == 2) {
+                valorTotal = quantidade * 5;
+            } else if (descricao == 3) {
+                valorTotal = quantidade * 2;
+            }
+
+            const pedido = {
+                idCliente: idCliente,
+                quantidade: quantidade,
+                descricao: descricao,
+                valorTotal: valorTotal
+            };
+
+            $.ajax({
+                url: 'api/criaPedido.php',
+                method: 'POST',
+                data: pedido,
+                success: function (response) {
+                    console.log('Pedido adicionado com sucesso:', response);
+
+                    $('#modalAdicionarPedido').modal('hide');
+
+                    $('#quantidade').val('');
+                    $('#descricao').val('');
+
+                    carregarPedidosDoCliente();
+                },
+                error: function (error) {
+                    // Trate os erros, se houver algum
+                    console.error('Erro ao adicionar pedido:', error);
+                }
+            });
+        });
+
+        // Função para carregar os pedidos do cliente
+        function carregarPedidosDoCliente() {
+            $.ajax({
+                url: 'api/obterPedidos.php',
+                method: 'GET',
+                data: { idCliente: idCliente },
+                success: function (response) {
+                    $('#pedidoTable tbody').empty();
+
+                    // Verifique se há dados de pedidos
+                    if (response && response.length > 0) {
+                        response.forEach(function (pedido) {
+                            var newRow = '<tr>';
+                            newRow += '<td>' + pedido.order_id + '</td>';
+                            newRow += '<td>' + pedido.name + '</td>';
+                            
+                            newRow += '<td class="descricao-cell"><span class="original-descricao" style="display: block;">' + pedido.description + '</span><input type="text" class="form-control input-descricao" value="' + pedido.description + '" style="display: none;"></td>';
+
+
+                            newRow += '<td class="quantidade-cell">' + pedido.quantity + '</td>';
+                            newRow += '<td>' + pedido.total_price + '</td>';
+                            newRow += '<td><button class="btn btn-warning" onclick="atualizarPedido(' + pedido.order_id + ')">Atualizar Pedido</button>';
+                            newRow += '<button class="btn btn-danger" onclick=excluirPedido(' + pedido.order_id + ')>Excluir Pedido</button></td>';
+                            newRow += '</tr>';
+
+                            // Adicione a nova linha à tabela
+                            $('#pedidoTable tbody').append(newRow);
+                        });
+                    } else {
+                        // Caso não haja pedidos, você pode exibir uma mensagem ou lidar com isso de outra maneira
+                        console.log('Nenhum pedido encontrado para este cliente.');
+                    }
+                },
+                error: function (error) {
+                    console.error('Erro ao carregar pedidos:', error);
+                }
+            });
+        }
+
+        // Chame a função para carregar os pedidos do cliente quando a página for carregada
+        carregarPedidosDoCliente();
+    });
+
+
+    function excluirPedido(pedidoId) {
+        if (confirm("Tem certeza de que deseja excluir este pedido?")) {
+            // Encontre a linha da tabela correspondente ao pedido a ser excluído
+            var rowToDelete = $('#pedidoTable tbody tr').filter(function() {
+                return $(this).find('td:first').text() == pedidoId;
+            });
+
+            rowToDelete.remove();
+
+            $.ajax({
+                url: 'api/deletePedido.php',
+                method: 'POST',
+                data: { pedido_id: pedidoId },
+                success: function (response) {
+                    if (response.status === "success") {
+                        console.log('Pedido excluído com sucesso:', response.message);
+                    } else {
+                        console.error('Erro ao excluir pedido:', response.message);
+                    }
+                },
+                error: function (error) {
+                    console.error('Erro ao excluir pedido:', error);
+                }
+            });
+        }
+    }
+
+
+
+
+
+    function atualizarPedido(orderId) {
+    $('#modalAtualizarPedido').modal('show');
+
+    $('#formAtualizarPedido').submit(function (e) {
+        e.preventDefault();
+
+        const quantidade = $('#descricao_att').val();
+        const descricao = $('#descricao_att').val();
+
+        let valorTotal = 0;
+        if (descricao == 1) {
+            valorTotal = quantidade * 1;
+        } else if (descricao == 2) {
+            valorTotal = quantidade * 5;
+        } else if (descricao == 3) {
+            valorTotal = quantidade * 2;
+        }
+
+        // Crie um objeto com os dados do pedido
+        const pedido = {
+            orderId: orderId,
+            quantidade: quantidade,
+            descricao: descricao,
+            valorTotal: valorTotal
+        };
+
+
+        $.ajax({
+            url: 'api/atualizaPedido.php',
+            method: 'POST',
+            data: pedido,
+            success: function (response) {
+                console.log('Pedido atualizado com sucesso:', response);
+
+                $('#modalAtualizarPedido').modal('hide');
+
+                $('#quantidade').val('');
+                $('#descricao').val('');
+
+                location.reload();
+
+            },
+            error: function (error) {
+                console.error('Erro ao atualizar pedido:', error);
+            }
+        });
+    });
+}
+
+
+    </script>
+</body>
+</html>
